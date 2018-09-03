@@ -62,8 +62,8 @@ app.use(function(err, req, res, next) {
 });
 
 
-app.listen(80,function () {    ////80
-    console.log('Server running at 80 port');
+app.listen(5050,function () { 
+    console.log('Server running at 5050 port');
 });
 
 

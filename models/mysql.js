@@ -1,9 +1,10 @@
 var mysql = require('mysql');     //引入mysql模块
 var connection = mysql.createConnection({      //创建mysql实例
-    host:'127.0.0.1',
-    port:'3306',
+    host:'ynlndshxcjhn.mysql.sae.sina.com.cn',
+    port:'10114',
     user:'root',
-    password:'Mingyou2018@',
+    //password:'Mingyou2018@',
+    password:'Aa123456',
     database:'test_server'
 });
 
