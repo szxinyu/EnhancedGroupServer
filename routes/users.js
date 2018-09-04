@@ -88,7 +88,7 @@ router.post('/sendGroupMsg', function(req, res) {
 	
 	if(gid && uid){
 		checkUserToken(uid, token, function(){
-			msgContent = JSON.stringify(msgContent);
+			//msgContent = JSON.stringify(msgContent);
 			var sql = 'insert into messages (type, content, create_time, state, gid, uid) value (?, ?, CURRENT_TIMESTAMP, 1, ?, ?)';
 			
 			console.log(sql)
