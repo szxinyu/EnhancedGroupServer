@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var groups = require('./routes/groups');
+var config = require('./config');
 
 var ejs = require('ejs');
 
@@ -62,8 +63,8 @@ app.use(function(err, req, res, next) {
 });
 
 
-app.listen(5050,function () { 
-    console.log('Server running at 5050 port');
+app.listen(config.APP_PORT,function () { 
+    console.log('Server running at ' + config.APP_PORT + ' port');
 });
 
 

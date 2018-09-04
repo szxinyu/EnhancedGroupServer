@@ -53,8 +53,8 @@ function getUnreadMsg(){
 						var receiverUid = unreadObj.receiver_uid;
 						
 						//检查是否要发送模板消息（是否已经在用户阅读前再次发送过）
-						var sql2 = 'select * from template_msg where uid = ' + receiverUid;
-						mysql.query(sql2, function(err, result2){
+						var sql2 = 'select * from template_msg where uid = ?';
+						mysql.query(sql2, [receiverUid], function(err, result2){
 							if((result2 && result2.length > 0 && result2.readed) || //已经阅读过消息
 								(!result2 || result2.length == 0) || //从未发送过模板消息
 								( result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
@@ -99,18 +99,16 @@ function getUnreadMsg(){
 										//增加发送模板消息的记录
 										var sql3 = '';
 										if(result2.readed){
-											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value ("'+UNREAD_MSG_TEMPLATE_ID+
-												'", '+unreadObj.receiver_uid+', 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
+											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
 										}else{
-											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value ("'+UNREAD_MSG_TEMPLATE_ID+
-												'", '+unreadObj.receiver_uid+', 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
+											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
 										}
-										mysql.query(sql3, function(err, result){ });
+										mysql.query(sql3, [UNREAD_MSG_TEMPLATE_ID, unreadObj.receiver_uid], function(err, result){ });
 										
 										
 										//删除已使用的formId
-										var sql4 = 'delete from user_form_ids where form_id = ' + formId + ' and uid = ' + unreadObj.receiver_uid;
-										mysql.query(sql4, function(err, result){ });
+										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
+										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
 										
 									}
 								})
@@ -162,8 +160,8 @@ function checkAllUserFormIds(){
 }
 
 function getAccessToken(callback){
-	var sql = 'SELECT access_token FROM wxa_access_token where app_id = "' + wxRequests.APP_ID + '" and TIMESTAMPADD(second,at_exp,at_create_time) > CURRENT_TIMESTAMP';
-  mysql.query(sql, function(err, result){
+	var sql = 'SELECT access_token FROM wxa_access_token where app_id = ? and TIMESTAMPADD(second,at_exp,at_create_time) > CURRENT_TIMESTAMP';
+  mysql.query(sql, [wxRequests.APP_ID, ], function(err, result){
 		var access_token = 'none';
     if(result && result.length > 0){
 			access_token = result[0].access_token + '';
@@ -173,9 +171,8 @@ function getAccessToken(callback){
 			//console.log('requesting new access_token');
 			wxRequests.getAccessToken(function(res){
 				access_token = res.access_token;
-				sql = 'insert into wxa_access_token (app_id, access_token, at_exp, at_create_time) value ("' + wxRequests.APP_ID + '", "' + 
-					access_token + '", ' + res.expires_in + ', CURRENT_TIMESTAMP)  on duplicate key update access_token = "' + access_token + '"';
-				mysql.query(sql, function(err, result){ });
+				sql = 'insert into wxa_access_token (app_id, access_token, at_exp, at_create_time) value (?, ?, ?, CURRENT_TIMESTAMP)  on duplicate key update access_token = ?';
+				mysql.query(sql, [wxRequests.APP_ID, access_token, res.expires_in, access_token], function(err, result){ });
 					
 				callback(access_token);
 			})

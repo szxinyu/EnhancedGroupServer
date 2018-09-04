@@ -5,8 +5,8 @@ var util = require("../models/util.js");
 var router = express.Router();
 
 function checkUserToken(uid, token, callback){
-	var sql = 'select uid from users where uid = ' + uid + ' and token="' + token + '"';
-	mysql.query(sql, function(err, result){
+	var sql = 'select uid from users where uid = ? and token=?';
+	mysql.query(sql, [uid, token], function(err, result){
 			callback(result && result.length >= 0)
 	});
 }
@@ -33,11 +33,15 @@ router.post('/login', function(req, res) {
 			//console.log('getUserOpenId ', 'code: ', code, 'openId: ', open_id);
 		
 			var randomStr = util.getRandomString(32); //token
-			var sql = 'insert into users (uid, avatar_url, uname, nickname, phone, open_id, create_time, remarks, state, token) value (NULL, "' + 
-				avatar_url + '", "' + uname + '", "' + nickname + '", "' + 
-				phone + '", "' + open_id + '", CURRENT_TIMESTAMP, "' + remarks + 
-				'", 1, "' + randomStr + '") on duplicate key update nickname="' + nickname + '", avatar_url="' + avatar_url + '", token="' + randomStr + '"';
-			mysql.query(sql, function(err, result){//result: {"fieldCount":0,"affectedRows":1,"insertId":10000,"serverStatus":2,"warningCount":0,"message":"","protocol41":true,"changedRows":0}
+			var sql = `
+			insert into 
+				users (uid, avatar_url, uname, nickname, phone, open_id, create_time, remarks, state, token) 
+			value
+				(NULL, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 1, ?)
+			on duplicate key update
+				nickname=?, avatar_url=?, token=?`;
+			mysql.query(sql, [avatar_url, uname, nickname, phone, open_id, remarks, randomStr, nickname, avatar_url, randomStr], 
+				function(err, result){//result: {"fieldCount":0,"affectedRows":1,"insertId":10000,"serverStatus":2,"warningCount":0,"message":"","protocol41":true,"changedRows":0}
 				//console.log(result);
 				var gIdx = result.insertId;
 				var sampleUser = {
@@ -49,8 +53,8 @@ router.post('/login', function(req, res) {
 					res.send(sampleUser);
 				}else{
 					
-					var sql2 = 'select * from users where open_id = "' + open_id + '"';
-					mysql.query(sql2, function(err, result){
+					var sql2 = 'select * from users where open_id = ?';
+					mysql.query(sql2, [open_id], function(err, result){
 						//console.log(result);
 						if(result.length > 0){
 							sampleUser = {
@@ -85,10 +89,10 @@ router.post('/sendGroupMsg', function(req, res) {
 	if(gid && uid){
 		checkUserToken(uid, token, function(){
 			msgContent = JSON.stringify(msgContent);
-			var sql = 'insert into messages (type, content, create_time, state, gid, uid) value (' + type + ', ' + msgContent + ', CURRENT_TIMESTAMP, 1, ' + gid + ', ' + uid + ')';
+			var sql = 'insert into messages (type, content, create_time, state, gid, uid) value (?, ?, CURRENT_TIMESTAMP, 1, ?, ?)';
 			
 			console.log(sql)
-			mysql.query(sql, function(err, result){
+			mysql.query(sql, [type, msgContent, gid, uid], function(err, result){
 				if(result){
 					res.send('200');
 				}else{
@@ -120,10 +124,10 @@ router.post('/uploadFormIdList', function(req, res) {
 			}
 			
 			if(strVal != ''){
-				var sql = 'insert into user_form_ids (uid, form_id, create_time) values (' + strVal + ')';
+				var sql = 'insert into user_form_ids (uid, form_id, create_time) values ?';
 				
 				console.log(sql)
-				mysql.query(sql, function(err, result){
+				mysql.query(sql, [strVal], function(err, result){
 					if(result){
 						res.send('200');
 					}else{
