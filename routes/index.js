@@ -16,7 +16,7 @@ var cos = new COS({
 //检查用户的未读消息，推送模板消息
 var unreadMsgTask = setInterval(function(){
 	getUnreadMsg();
-}, 10 * 1000); //10秒循环一次
+}, 12 * 1000); //12秒循环一次，大于2次客户端自动刷新消息列表的时间。以免服务器在客户端刷新间隔误以为用户未阅读
 
 //检查用户是否还有可用formId，以正常获取模板消息
 var noMoreFormIdTask = setInterval(function(){
