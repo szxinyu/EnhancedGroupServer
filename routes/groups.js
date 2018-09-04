@@ -97,7 +97,7 @@ router.post('/msgList', function(req, res) {
 		var sql = 'select uid from groups where gid = ?';
 		mysql.query(sql, [gid], function(err, result){
 			if(result){
-				var ownerId = result[0];
+				var ownerId = result[0].uid;
 				//选取不同角色可读的信息列表
 				if(ownerId && ownerId == uid){//是群主
 					sql = 'select m.mid, m.type, m.content, u.uid, u.avatar_url, u.nickname from messages m, users u where m.gid = ?' + 
