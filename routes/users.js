@@ -124,10 +124,10 @@ router.post('/uploadFormIdList', function(req, res) {
 			}
 			
 			if(strVal != ''){
-				var sql = 'insert into user_form_ids (uid, form_id, create_time) values ?';
+				var sql = 'insert into user_form_ids (uid, form_id, create_time) values (' + strVal + ')';
 				
 				console.log(sql)
-				mysql.query(sql, [strVal], function(err, result){
+				mysql.query(sql, function(err, result){
 					if(result){
 						res.send('200');
 					}else{
