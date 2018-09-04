@@ -95,6 +95,7 @@ router.post('/msgList', function(req, res) {
 	if(gid && uid && token){
 		
 		var sql = 'select uid from groups where gid = ? and uid = ?';
+		console.log('sql 22222: ', sql);
 		mysql.query(sql, [gid, uid], function(err, result){
 			if(result){
 				
@@ -106,12 +107,13 @@ router.post('/msgList', function(req, res) {
 					sql = 'select m.mid, m.type, m.content, u.uid, u.avatar_url, u.nickname from messages m, users u where m.gid = ?' + 
 						' and u.uid = m.uid and u.uid = ' + result[0] + ' order by m.create_time asc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
 				}
+				console.log('sql 11111: ', sql);
 				mysql.query(sql, [gid], function(err, result){
 					if(result){
 						var list = JSON.stringify(result);
 						res.send(list);
 					}else{
-						res.send('error getting group messages: ' + err);
+						res.send('error getting group messages 1: ' + err);
 					}
 				});
 				
@@ -125,7 +127,7 @@ router.post('/msgList', function(req, res) {
 				mysql.query(sql3, function(err, result){ });
 				
 			}else{
-				res.send('error getting group messages: ' + err);
+				res.send('error getting group messages 2: ' + err);
 			}
 			
 		});
