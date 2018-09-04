@@ -26,16 +26,19 @@ var noMoreFormIdTask = setInterval(function(){
 function getUnreadMsg(){
 	getAccessToken(function(access_token){
 		var sql = `SELECT count(m.mid) as unread_count, 
-									m.gid,u.uid as receiver_uid,
+									g.gid,
+									g.gname,
+									u.uid as receiver_uid,
 									m.content,
 									u.open_id, 
 									su.uid as sender_uid, 
 									su.nickname as sender_name, 
 									f.form_id, 
 									max(m.create_time) as create_time 
-								FROM group_last_read g
-								LEFT JOIN messages m on (g.gid = m.gid and g.last_time < m.create_time)
-								LEFT JOIN users u on g.uid = u.uid 
+								FROM group_last_read gl
+								LEFT JOIN groups g on g.gid = gl.gid
+								LEFT JOIN messages m on (gl.gid = m.gid and gl.last_time < m.create_time)
+								LEFT JOIN users u on gl.uid = u.uid 
 								LEFT JOIN users su on su.uid = m.uid 
 								LEFT JOIN user_form_ids f on (u.uid = f.uid and TIMESTAMPADD(second,7 * 24 * 3600,f.create_time) > CURRENT_TIMESTAMP)
 								WHERE su.uid != u.uid
@@ -67,6 +70,7 @@ function getUnreadMsg(){
 								var formId = unreadObj.form_id;
 								var content = unreadObj.content;
 								var senderName = unreadObj.sender_name;
+								var groupName = unreadObj.gname;
 								var createTime = util.formatTime(unreadObj.create_time);
 								
 								//发送模板消息
@@ -81,7 +85,7 @@ function getUnreadMsg(){
 									form_id: formId,
 									data: {
 										keyword1:{
-											value: unreadCount > 1 ? '多条消息' : senderName
+											value: unreadCount > 1 ? '多条消息' : groupName + ' - ' + senderName
 										},
 										keyword2:{
 											value: createTime
