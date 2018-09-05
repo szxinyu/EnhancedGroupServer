@@ -97,10 +97,11 @@ function getUnreadMsg(){
 								}
 								
 								wxRequests.sendTemplate(access_token, templateMsgData, function(res){
+									if(typeof(res) == 'string'){
+										res = JSON.parse(res)
+									}
+									
 									var errorCode = res.errcode
-									console.log('res body='+res)
-									console.log('errorCode=',errorCode)
-									console.log('errorCode2=',res['errcode'])
 									if(errorCode == 0){
 										//成功
 										
