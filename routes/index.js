@@ -107,7 +107,7 @@ function getUnreadMsg(){
 										
 										//增加发送模板消息的记录
 										var sql3 = '';
-										if(result2[0].readed){
+										if(result2 && result2.length > 0 && result2[0].readed){
 											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
 										}else{
 											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
