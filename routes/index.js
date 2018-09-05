@@ -56,11 +56,11 @@ function getUnreadMsg(){
 						var receiverUid = unreadObj.receiver_uid;
 						
 						//检查是否要发送模板消息（是否已经在用户阅读前再次发送过）
-						var sql2 = 'select * from template_msg where uid = ?';
-						mysql.query(sql2, [receiverUid], function(err, result2){
-							if((result2 && result2.length > 0 && result2.readed) || //已经阅读过消息
-								(!result2 || result2.length == 0) || //从未发送过模板消息
-								( result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
+						var sql2 = 'select * from template_msg where uid = ? and template_id = ?';
+						mysql.query(sql2, [receiverUid, UNREAD_MSG_TEMPLATE_ID], function(err, result2){
+							if((!result2 || result2.length == 0) || //从未发送过模板消息
+								(  result2 && result2.length > 0 && result2.readed) || //已经阅读过消息
+								(  result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
 									((util.timeStamp(result2.create_time) + 24 * 3600) <= util.timeStamp()) ) //并且距离上次发送已经过去24小时，以免快速消耗formId
 								){//发送
 								
@@ -136,6 +136,10 @@ function getUnreadMsg(){
 								
 							}else{//不发送
 								console.log('未发送模板消息给用户：uid=' + receiverUid)
+								console.log(!result2 || result2.length == 0);
+								console.log(result2 && result2.length > 0 && result2.readed);
+								console.log(result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
+									((util.timeStamp(result2.create_time) + 24 * 3600) <= util.timeStamp()));
 							}
 							
 						});
