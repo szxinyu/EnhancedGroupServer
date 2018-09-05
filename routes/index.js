@@ -98,6 +98,7 @@ function getUnreadMsg(){
 								
 								wxRequests.sendTemplate(access_token, templateMsgData, function(res){
 									var errorCode = res.errcode
+									console.log('errorCode=',errorCode)
 									if(errorCode == 0){
 										//成功
 										
