@@ -97,7 +97,8 @@ function getUnreadMsg(){
 								}
 								
 								wxRequests.sendTemplate(access_token, templateMsgData, function(res){
-									if(res.errcode == 0){
+									var errorCode = res.errcode
+									if(errorCode == 0){
 										//成功
 										
 										//增加发送模板消息的记录
@@ -114,15 +115,15 @@ function getUnreadMsg(){
 										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
 										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
 										
-									}else if(errcode == 41030){ //模板消息参数设置的page不正确
+									}else if(errorCode == 41030){ //模板消息参数设置的page不正确
 										console.log('模板消息参数设置的page不正确')
-									}else if(errcode == 41029 || errcode == 41028){ //41028	form_id不正确，或者过期 //41029	form_id已被使用
+									}else if(errorCode == 41029 || errorCode == 41028){ //41028	form_id不正确，或者过期 //41029	form_id已被使用
 										
 										//删除已使用的formId
 										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
 										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
 										
-									}else if(errcode == 45009){ //接口调用超过限额（目前默认每个帐号日调用限额为100万）
+									}else if(errorCode == 45009){ //接口调用超过限额（目前默认每个帐号日调用限额为100万）
 										console.log('接口调用超过限额（目前默认每个帐号日调用限额为100万）')
 									}else{
 										console.log('模板消息发送失败：', result)
