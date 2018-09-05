@@ -59,9 +59,9 @@ function getUnreadMsg(){
 						var sql2 = 'select * from template_msg where uid = ? and template_id = ?';
 						mysql.query(sql2, [receiverUid, UNREAD_MSG_TEMPLATE_ID], function(err, result2){
 							if((!result2 || result2.length == 0) || //从未发送过模板消息
-								(  result2 && result2.length > 0 && result2.readed) || //已经阅读过消息
-								(  result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
-									((util.timeStamp(result2.create_time) + 24 * 3600) <= util.timeStamp()) ) //并且距离上次发送已经过去24小时，以免快速消耗formId
+								(  result2 && result2.length > 0 && result2[0].readed) || //已经阅读过消息
+								(  result2 && result2.length > 0 && !result2[0].resent && //已经发送过一次，还未再次发送
+									((util.timeStamp(result2[0].create_time) + 24 * 3600) <= util.timeStamp()) ) //并且距离上次发送已经过去24小时，以免快速消耗formId
 								){//发送
 								
 								//console.log('unread msg [' + i + ']: ', unreadObj);
@@ -107,7 +107,7 @@ function getUnreadMsg(){
 										
 										//增加发送模板消息的记录
 										var sql3 = '';
-										if(result2.readed){
+										if(result2[0].readed){
 											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
 										}else{
 											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
@@ -137,9 +137,9 @@ function getUnreadMsg(){
 							}else{//不发送
 								console.log('未发送模板消息给用户：uid=' + receiverUid)
 								console.log(!result2 || result2.length == 0);
-								console.log(result2 && result2.length > 0 && result2.readed);
-								console.log(result2 && result2.length > 0 && !result2.resent && //已经发送过一次，还未再次发送
-									((util.timeStamp(result2.create_time) + 24 * 3600) <= util.timeStamp()));
+								console.log(result2 && result2.length > 0 && result2[0].readed);
+								console.log(result2 && result2.length > 0 && !result2[0].resent && //已经发送过一次，还未再次发送
+									((util.timeStamp(result2[0].create_time) + 24 * 3600) <= util.timeStamp()));
 							}
 							
 						});
