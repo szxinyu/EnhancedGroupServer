@@ -136,10 +136,6 @@ function getUnreadMsg(){
 								
 							}else{//不发送
 								console.log('未发送模板消息给用户：uid=' + receiverUid)
-								console.log(!result2 || result2.length == 0);
-								console.log(result2 && result2.length > 0 && result2[0].readed);
-								console.log(result2 && result2.length > 0 && !result2[0].resent && //已经发送过一次，还未再次发送
-									((util.timeStamp(result2[0].create_time) + 24 * 3600) <= util.timeStamp()));
 							}
 							
 						});
