@@ -81,7 +81,7 @@ function getUnreadMsg(){
 								var templateMsgData = {
 									touser: userOpenId,
 									template_id: UNREAD_MSG_TEMPLATE_ID,
-									page: 'index',
+									page: 'pages/index/index',
 									form_id: formId,
 									data: {
 										keyword1:{
