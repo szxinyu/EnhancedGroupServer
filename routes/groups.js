@@ -101,10 +101,10 @@ router.post('/msgList', function(req, res) {
 				//选取不同角色可读的信息列表
 				if(ownerId && ownerId == uid){//是群主
 					sql = 'select m.mid, m.type, m.content, u.uid, u.avatar_url, gm.u_nickname as nickname, m.create_time from messages m, users u, group_members gm where m.gid = ?' + 
-						' and u.uid = m.uid and m.uid = gm.uid order by m.create_time desc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
+						' and u.uid = m.uid and m.uid = gm.uid and gm.gid = m.gid order by m.create_time desc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
 				}else{//是普通组员，可以看到群主或自己的聊天记录
 					sql = 'select m.mid, m.type, m.content, u.uid, u.avatar_url, gm.u_nickname as nickname, m.create_time from messages m, users u, group_members gm where m.gid = ?' + 
-						' and u.uid = m.uid and m.uid = gm.uid  and (u.uid = ' + ownerId + ' or u.uid = ' + uid + ') order by m.create_time desc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
+						' and u.uid = m.uid and m.uid = gm.uid and gm.gid = m.gid and (u.uid = ' + ownerId + ' or u.uid = ' + uid + ') order by m.create_time desc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
 				}
 				mysql.query(sql, [gid], function(err, result){
 					if(result){
