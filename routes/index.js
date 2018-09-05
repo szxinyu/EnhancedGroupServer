@@ -25,7 +25,7 @@ var noMoreFormIdTask = setInterval(function(){
 
 function getUnreadMsg(){
 	getAccessToken(function(access_token){
-		var sql = `SELECT count(m.mid) as unread_count, 
+		var sql = `SELECT count(distinct m.mid) as unread_count, 
 									g.gid,
 									g.gname,
 									u.uid as receiver_uid,
@@ -35,13 +35,13 @@ function getUnreadMsg(){
 									su.nickname as sender_name, 
 									f.form_id, 
 									max(m.create_time) as create_time 
-								FROM group_last_read gl
-								LEFT JOIN groups g on g.gid = gl.gid
-								LEFT JOIN messages m on (gl.gid = m.gid and gl.last_time < m.create_time)
+								FROM messages m
+								LEFT JOIN group_last_read gl on gl.gid = m.gid 
+								LEFT JOIN groups g on g.gid = gl.gid 
 								LEFT JOIN users u on gl.uid = u.uid 
 								LEFT JOIN users su on su.uid = m.uid 
-								LEFT JOIN user_form_ids f on (u.uid = f.uid and TIMESTAMPADD(second,7 * 24 * 3600,f.create_time) > CURRENT_TIMESTAMP)
-								WHERE su.uid != u.uid
+								LEFT JOIN user_form_ids f on u.uid = f.uid
+								WHERE su.uid != u.uid and g.state = 1 and m.uid != gl.uid and gl.last_time < m.create_time and TIMESTAMPADD(second,7 * 24 * 3600,f.create_time) > CURRENT_TIMESTAMP
 								group by m.uid 
 								order by m.gid, m.mid asc;`;
 		// group by m.gid, m.uid 可以按照不同分组查看各个分组里用户的未读信息
