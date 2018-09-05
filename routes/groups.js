@@ -109,7 +109,6 @@ router.post('/msgList', function(req, res) {
 				mysql.query(sql, [gid], function(err, result){
 					if(result){
 						var list = result.reverse();
-	console.log('msgList list: ', list)
 						var listStr = JSON.stringify(list);
 						res.send(listStr);
 					}else{
@@ -144,7 +143,6 @@ router.post('/addUserToGroup', function(req, res) {
 	var gid = content.gid || '';
 	var token = content.token || '';
 	var nickname = content.nickname || '';
-	console.log('addUserToGroup nickname: ', nickname)
 	if(gid && uid){
 		
 		//更新组成员信息

@@ -232,6 +232,13 @@ router.get('/all', function(req, res) {
   });
 });
 
+router.get('/logs', function(req, res) {
+    res.writeHead(200, {"Content-Type": "text/html"});
+		fs.readFile('./out.log',function (err, data){
+			res.end(data);
+		});
+});
+
 
 router.post('/cosAccessAuth', function(req, res) {
   var content = req.body;
