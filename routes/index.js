@@ -239,6 +239,13 @@ router.get('/logs', function(req, res) {
 		});
 });
 
+router.get('/dbdate', function(req, res) {
+  var sql = 'SELECT CURRENT_TIMESTAMP';
+  mysql.query(sql, function(err, result){
+    res.send(result);
+  });
+});
+
 
 router.post('/cosAccessAuth', function(req, res) {
   var content = req.body;
