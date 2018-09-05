@@ -67,7 +67,7 @@ function sendTemplate(access_token, param, callback){
 		if (err) {
 			console.log('error on wxRequest.sendTemplate url: ', url, 'error: ', err)
 		}else {
-			console.log('wxRequest.sendTemplate - \n\t toUser: ', param.touser, '\n\t result: ', body);
+			console.log('wxRequest.sendTemplate - \n\t param: ', param, '\n\t result: ', body);
 			callback(body);
 		}
 	})

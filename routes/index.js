@@ -81,7 +81,7 @@ function getUnreadMsg(){
 								var templateMsgData = {
 									touser: userOpenId,
 									template_id: UNREAD_MSG_TEMPLATE_ID,
-									page: 'pages/index/index',
+									page: 'index',
 									form_id: formId,
 									data: {
 										keyword1:{
@@ -114,6 +114,18 @@ function getUnreadMsg(){
 										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
 										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
 										
+									}else if(errcode == 41030){ //模板消息参数设置的page不正确
+										console.log('模板消息参数设置的page不正确')
+									}else if(errcode == 41029 || errcode == 41028){ //41028	form_id不正确，或者过期 //41029	form_id已被使用
+										
+										//删除已使用的formId
+										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
+										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
+										
+									}else if(errcode == 45009){ //接口调用超过限额（目前默认每个帐号日调用限额为100万）
+										console.log('接口调用超过限额（目前默认每个帐号日调用限额为100万）')
+									}else{
+										console.log('模板消息发送失败：', result)
 									}
 								})
 								
