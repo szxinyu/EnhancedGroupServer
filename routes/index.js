@@ -1,6 +1,7 @@
 var express = require('express');
 var mysql = require("../models/mysqlCommands.js");
 var wxRequests = require("../models/wxRequests.js");
+var moment = require('moment');
 var util = require("../models/util.js");
 var router = express.Router();
 var COS = require('cos-nodejs-sdk-v5');
@@ -58,84 +59,35 @@ function getUnreadMsg(){
 						//检查是否要发送模板消息（是否已经在用户阅读前再次发送过）
 						var sql2 = 'select * from template_msg where uid = ? and template_id = ?';
 						mysql.query(sql2, [receiverUid, UNREAD_MSG_TEMPLATE_ID], function(err, result2){
-							if((!result2 || result2.length == 0) || //从未发送过模板消息
-								(  result2 && result2.length > 0 && result2[0].readed) || //已经阅读过消息
-								(  result2 && result2.length > 0 && !result2[0].resent && //已经发送过一次，还未再次发送
-									((util.timeStamp(result2[0].create_time) + 24 * 3600) <= util.timeStamp()) ) //并且距离上次发送已经过去24小时，以免快速消耗formId
-								){//发送
+							
+							var neverSendTemplate = 0, readedTemplate = 0, didNotResend = 0, didNotResendButIn24HourLimit, didNotReadResentMsg = 0
+							neverSendTemplate = !result2 || result2.length == 0 //从未发送过模板消息
+							if(!neverSendTemplate) readedTemplate = result2[0].readed //已经阅读过消息
+							if(!neverSendTemplate && !readedTemplate){
+								var lastSentTimeStr = util.formatMySqlDateString(result2[0].create_time)
+								var lastSentTimeDate = moment(lastSentTimeStr)
+								var timeDiff = lastSentTimeDate.diff(new Date(), 'hours')
 								
-								//console.log('unread msg [' + i + ']: ', unreadObj);
-								var unreadCount = unreadObj.unread_count;
-								var userOpenId = unreadObj.open_id;
-								var formId = unreadObj.form_id;
-								var content = unreadObj.content;
-								var senderName = unreadObj.sender_name;
-								var groupName = unreadObj.gname;
-								var createTime = util.formatTime(unreadObj.create_time);
-								
-								//发送模板消息
-								var lcContent = content.toLowerCase();
-								if(lcContent.indexOf('jpg') != -1 || lcContent.indexOf('png') != -1 || lcContent.indexOf('jpeg') != -1 || lcContent.indexOf('gif') != -1){
-									content = '[图片]';
-								}
-								var templateMsgData = {
-									touser: userOpenId,
-									template_id: UNREAD_MSG_TEMPLATE_ID,
-									page: 'pages/index/index',
-									form_id: formId,
-									data: {
-										keyword1:{
-											value: unreadCount > 1 ? '多条消息' : groupName + ' - ' + senderName
-										},
-										keyword2:{
-											value: createTime
-										},
-										keyword3:{
-											value: unreadCount > 1 ? '共多条未读消息(' + unreadCount + '条)，请进组查看' : content
-										}
-									}
-								}
-								
-								wxRequests.sendTemplate(access_token, templateMsgData, function(res){
-									if(typeof(res) == 'string'){
-										res = JSON.parse(res)
-									}
-									
-									var errorCode = res.errcode
-									if(errorCode == 0){
-										//成功
-										
-										//增加发送模板消息的记录
-										var sql3 = '';
-										if(result2 && result2.length > 0 && result2[0].readed){
-											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
-										}else{
-											sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
-										}
-										mysql.query(sql3, [UNREAD_MSG_TEMPLATE_ID, unreadObj.receiver_uid], function(err, result){ });
-										
-										
-										//删除已使用的formId
-										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
-										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
-										
-									}else if(errorCode == 41030){ //模板消息参数设置的page不正确
-										console.log('模板消息参数设置的page不正确')
-									}else if(errorCode == 41029 || errorCode == 41028){ //41028	form_id不正确，或者过期 //41029	form_id已被使用
-										
-										//删除已使用的formId
-										var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
-										mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
-										
-									}else if(errorCode == 45009){ //接口调用超过限额（目前默认每个帐号日调用限额为100万）
-										console.log('接口调用超过限额（目前默认每个帐号日调用限额为100万）')
+								if(!result2[0].resent){
+									if(timeDiff > 24){
+										didNotResend = 1 //已经发送过一次，还未再次发送 //并且距离上次发送已经过去24小时，以免快速消耗formId
 									}else{
-										console.log('模板消息发送失败：', result)
+										didNotResendButIn24HourLimit = 1 //距离上次发送还未过去24小时
 									}
-								})
+								}
 								
+							}
+							if(!neverSendTemplate && !readedTemplate && result2[0].resent){ //已经再次发送，用户一直未阅读
+								didNotReadResentMsg = 1
+							}
+							if((neverSendTemplate) || 
+								 (readedTemplate) ||
+								 (didNotResend) ){//发送
+								sendUnreadNotiTemplate(unreadObj)
 							}else{//不发送
-								console.log('未发送模板消息给用户：uid=' + receiverUid)
+								console.log('未发送模板消息给用户：uid=' + receiverUid, ', \n原因：', 
+								'\n\t Sent once but not readed in 24 hours: ' + didNotResendButIn24HourLimit, 
+								'\n\t sent twice but not readed: ' + didNotReadResentMsg)
 							}
 							
 						});
@@ -147,6 +99,78 @@ function getUnreadMsg(){
 		});
 	});
 	
+}
+
+function sendUnreadNotiTemplate(unreadObj){
+	//console.log('unread msg [' + i + ']: ', unreadObj);
+	var unreadCount = unreadObj.unread_count;
+	var userOpenId = unreadObj.open_id;
+	var formId = unreadObj.form_id;
+	var content = unreadObj.content;
+	var senderName = unreadObj.sender_name;
+	var groupName = unreadObj.gname;
+	var createTime = util.formatTime(unreadObj.create_time);
+	
+	//发送模板消息
+	var lcContent = content.toLowerCase();
+	if(lcContent.indexOf('jpg') != -1 || lcContent.indexOf('png') != -1 || lcContent.indexOf('jpeg') != -1 || lcContent.indexOf('gif') != -1){
+		content = '[图片]';
+	}
+	var templateMsgData = {
+		touser: userOpenId,
+		template_id: UNREAD_MSG_TEMPLATE_ID,
+		page: 'pages/index/index',
+		form_id: formId,
+		data: {
+			keyword1:{
+				value: unreadCount > 1 ? '多条消息' : groupName + ' - ' + senderName
+			},
+			keyword2:{
+				value: createTime
+			},
+			keyword3:{
+				value: unreadCount > 1 ? '共多条未读消息(' + unreadCount + '条)，请进组查看' : content
+			}
+		}
+	}
+	
+	wxRequests.sendTemplate(access_token, templateMsgData, function(res){
+		if(typeof(res) == 'string'){
+			res = JSON.parse(res)
+		}
+		
+		var errorCode = res.errcode
+		if(errorCode == 0){
+			//成功
+			
+			//增加发送模板消息的记录
+			var sql3 = '';
+			if(result2 && result2.length > 0 && result2[0].readed){
+				sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update readed = 0, resent = 0, create_time = CURRENT_TIMESTAMP';
+			}else{
+				sql3 = 'insert into template_msg (template_id, uid, resent, readed, create_time, resent_time) value (?, ?, 0, 0, CURRENT_TIMESTAMP, "0000-00-00 00:00:00") on duplicate key update resent = 1, resent_time = CURRENT_TIMESTAMP';
+			}
+			mysql.query(sql3, [UNREAD_MSG_TEMPLATE_ID, unreadObj.receiver_uid], function(err, result){ });
+			
+			
+			//删除已使用的formId
+			var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
+			mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
+			
+		}else if(errorCode == 41030){ //模板消息参数设置的page不正确
+			console.log('模板消息参数设置的page不正确')
+		}else if(errorCode == 41029 || errorCode == 41028){ //41028	form_id不正确，或者过期 //41029	form_id已被使用
+			
+			//删除已使用的formId
+			var sql4 = 'delete from user_form_ids where form_id = ? and uid = ?';
+			mysql.query(sql4, [formId, unreadObj.receiver_uid], function(err, result){ });
+			
+		}else if(errorCode == 45009){ //接口调用超过限额（目前默认每个帐号日调用限额为100万）
+			console.log('接口调用超过限额（目前默认每个帐号日调用限额为100万）')
+		}else{
+			console.log('模板消息发送失败：', res)
+		}
+	})
 }
 
 function checkAllUserFormIds(){

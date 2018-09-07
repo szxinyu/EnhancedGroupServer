@@ -33,8 +33,17 @@ function getRandomString(n) {
   return s;
 }
 
+
+/**
+ * 将服务器mysql传递回来的 含有 T 字母的timestamp字符串转换成正常的时间字符串
+ */
+function formatMySqlDateString(dateStr){
+  return dateStr.split('.')[0].replace('T', ' ')
+}
+
 module.exports = {
   formatTime: formatTime,
   timeStamp: timeStamp,
-  getRandomString: getRandomString
+  getRandomString: getRandomString,
+	formatMySqlDateString: formatMySqlDateString
 }
