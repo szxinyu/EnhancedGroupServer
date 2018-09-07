@@ -106,6 +106,19 @@ router.post('/msgList', function(req, res) {
 					sql = 'select m.mid, m.type, m.content, u.uid, u.avatar_url, gm.u_nickname as nickname, m.create_time from messages m, users u, group_members gm where m.gid = ?' + 
 						' and u.uid = m.uid and m.uid = gm.uid and gm.gid = m.gid and (u.uid = ' + ownerId + ' or u.uid = ' + uid + ') order by m.create_time desc limit ' + PAGE_SIZE + ' offset ' + PAGE_SIZE * (pageNumber - 1);
 				}
+				
+				try{ 
+					//更新最后一次阅读时间
+					var sql2 = 'insert into group_last_read (gid, uid, last_time) value (?, ?, CURRENT_TIMESTAMP) on duplicate key update last_time = CURRENT_TIMESTAMP';
+					mysql.query(sql2, [gid, uid], function(err, result){ });
+					
+					//更新模板发送记录，设置模板发送记录为已读，以便下次发送新模板消息
+					var sql3 = 'update template_msg set readed = 1 where uid = ' + uid;
+					mysql.query(sql3, function(err, result){ });
+				} catch(err) {
+					console.log('Error on updating things after users have read group msg list: ', err)
+				}
+				
 				mysql.query(sql, [gid], function(err, result){
 					if(result){
 						var list = result.reverse();
@@ -115,15 +128,6 @@ router.post('/msgList', function(req, res) {
 						res.send('error getting group messages 1: ' + err);
 					}
 				});
-				
-				
-				//更新最后一次阅读时间
-				var sql2 = 'insert into group_last_read (gid, uid, last_time) value (?, ?, CURRENT_TIMESTAMP) on duplicate key update last_time = CURRENT_TIMESTAMP';
-				mysql.query(sql2, [gid, uid], function(err, result){ });
-				
-				//更新模板发送记录，设置模板发送记录为已读，以便下次发送新模板消息
-				var sql3 = 'update template_msg set readed = 1 where uid = ' + uid;
-				mysql.query(sql3, function(err, result){ });
 				
 			}else{
 				res.send('error getting group messages 2: ' + err);

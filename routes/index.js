@@ -30,6 +30,7 @@ function getUnreadMsg(){
 									g.gid,
 									g.gname,
 									u.uid as receiver_uid,
+									u.nickname as receiver_name,
 									m.content,
 									u.open_id, 
 									su.uid as sender_uid, 
@@ -55,12 +56,13 @@ function getUnreadMsg(){
 					
 					(function(unreadObj){
 						var receiverUid = unreadObj.receiver_uid;
+						var receiver_name = unreadObj.receiver_name;
 						
 						//检查是否要发送模板消息（是否已经在用户阅读前再次发送过）
 						var sql2 = 'select * from template_msg where uid = ? and template_id = ?';
 						mysql.query(sql2, [receiverUid, UNREAD_MSG_TEMPLATE_ID], function(err, result2){
 							
-							var neverSendTemplate = 0, readedTemplate = 0, didNotResend = 0, didNotResendButIn24HourLimit, didNotReadResentMsg = 0
+							var neverSendTemplate = 0, readedTemplate = 0, didNotResend = 0, didNotResendButIn24HourLimit = 0, didNotReadResentMsg = 0
 							neverSendTemplate = !result2 || result2.length == 0 //从未发送过模板消息
 							if(!neverSendTemplate) readedTemplate = result2[0].readed //已经阅读过消息
 							if(!neverSendTemplate && !readedTemplate){
@@ -90,9 +92,9 @@ function getUnreadMsg(){
 								 (didNotResend) ){//发送
 								sendUnreadNotiTemplate(unreadObj)
 							}else{//不发送
-								console.log('未发送模板消息给用户：uid=' + receiverUid, ', \n原因：', 
-								'\n\t Sent once but not readed in 24 hours: ' + didNotResendButIn24HourLimit, 
-								'\n\t sent twice but not readed: ' + didNotReadResentMsg)
+								console.log('未发送模板消息给用户：[' + receiver_name + '](uid:' + receiverUid + '), \n原因：', 
+								'\n\t Sent once but not read in 24 hours: ' + didNotResendButIn24HourLimit, 
+								'\n\t sent twice but not read: ' + didNotReadResentMsg)
 							}
 							
 						});
