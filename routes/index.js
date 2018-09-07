@@ -64,8 +64,13 @@ function getUnreadMsg(){
 							neverSendTemplate = !result2 || result2.length == 0 //从未发送过模板消息
 							if(!neverSendTemplate) readedTemplate = result2[0].readed //已经阅读过消息
 							if(!neverSendTemplate && !readedTemplate){
-								var lastSentTimeStr = util.formatMySqlDateString(result2[0].create_time)
+								var lastSentTimeStr = result2[0].create_time
+								if(typeof(lastSentTimeStr) == 'string'){
+									lastSentTimeStr = util.formatMySqlDateString(lastSentTimeStr)
+								}
+								
 								var lastSentTimeDate = moment(lastSentTimeStr)
+
 								var timeDiff = lastSentTimeDate.diff(new Date(), 'hours')
 								
 								if(!result2[0].resent){
