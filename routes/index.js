@@ -90,7 +90,7 @@ function getUnreadMsg(){
 							if((neverSendTemplate) || 
 								 (readedTemplate) ||
 								 (didNotResend) ){//发送
-								sendUnreadNotiTemplate(unreadObj)
+								sendUnreadNotiTemplate(unreadObj, access_token)
 							}else{//不发送
 								console.log('未发送模板消息给用户：[' + receiver_name + '](uid:' + receiverUid + '), \n原因：', 
 								'\n\t Sent once but not read in 24 hours: ' + didNotResendButIn24HourLimit, 
@@ -108,7 +108,7 @@ function getUnreadMsg(){
 	
 }
 
-function sendUnreadNotiTemplate(unreadObj){
+function sendUnreadNotiTemplate(unreadObj, access_token){
 	//console.log('unread msg [' + i + ']: ', unreadObj);
 	var unreadCount = unreadObj.unread_count;
 	var userOpenId = unreadObj.open_id;
