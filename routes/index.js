@@ -44,7 +44,7 @@ function getUnreadMsg(){
 								LEFT JOIN users su on su.uid = m.uid 
 								LEFT JOIN user_form_ids f on u.uid = f.uid
 								WHERE su.uid != u.uid and g.state = 1 and m.uid != gl.uid and gl.last_time < m.create_time and TIMESTAMPADD(second,7 * 24 * 3600,f.create_time) > CURRENT_TIMESTAMP
-								group by m.uid 
+								group by u.uid 
 								order by m.gid, m.mid asc;`;
 		// group by m.gid, m.uid 可以按照不同分组查看各个分组里用户的未读信息
 		mysql.query(sql, function(err, result){
@@ -90,7 +90,7 @@ function getUnreadMsg(){
 							if((neverSendTemplate) || 
 								 (readedTemplate) ||
 								 (didNotResend) ){//发送
-								sendUnreadNotiTemplate(unreadObj, access_token)
+								sendUnreadNotiTemplate(unreadObj, access_token, result2)
 							}else{//不发送
 								console.log('未发送模板消息给用户：[' + receiver_name + '](uid:' + receiverUid + '), \n原因：', 
 								'\n\t Sent once but not read in 24 hours: ' + didNotResendButIn24HourLimit, 
@@ -108,7 +108,7 @@ function getUnreadMsg(){
 	
 }
 
-function sendUnreadNotiTemplate(unreadObj, access_token){
+function sendUnreadNotiTemplate(unreadObj, access_token, result2){
 	//console.log('unread msg [' + i + ']: ', unreadObj);
 	var unreadCount = unreadObj.unread_count;
 	var userOpenId = unreadObj.open_id;
